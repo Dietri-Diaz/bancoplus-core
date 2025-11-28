@@ -1,0 +1,151 @@
+{
+  "users": [
+    {
+      "id": "1",
+      "email": "admin@bancoplus.com",
+      "password": "admin123",
+      "name": "Administrador Principal",
+      "role": "admin",
+      "createdAt": "2024-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "2",
+      "email": "usuario@bancoplus.com",
+      "password": "user123",
+      "name": "Juan Pérez",
+      "role": "user",
+      "createdAt": "2024-01-15T00:00:00.000Z"
+    },
+    {
+      "id": "3",
+      "email": "maria@bancoplus.com",
+      "password": "user123",
+      "name": "María García",
+      "role": "user",
+      "createdAt": "2024-02-01T00:00:00.000Z"
+    }
+  ],
+  "accounts": [
+    {
+      "id": "acc-1",
+      "userId": "2",
+      "type": "ahorro",
+      "accountNumber": "0001-2345-6789-0001",
+      "balance": 15000.50,
+      "currency": "USD",
+      "status": "active",
+      "createdAt": "2024-01-15T00:00:00.000Z",
+      "interestRate": 2.5
+    },
+    {
+      "id": "acc-2",
+      "userId": "2",
+      "type": "corriente",
+      "accountNumber": "0001-2345-6789-0002",
+      "balance": 5000.00,
+      "currency": "USD",
+      "status": "active",
+      "createdAt": "2024-02-01T00:00:00.000Z",
+      "interestRate": 0
+    },
+    {
+      "id": "acc-3",
+      "userId": "3",
+      "type": "empresarial",
+      "accountNumber": "0001-2345-6789-0003",
+      "balance": 50000.00,
+      "currency": "USD",
+      "status": "active",
+      "createdAt": "2024-02-15T00:00:00.000Z",
+      "interestRate": 1.5
+    }
+  ],
+  "credits": [
+    {
+      "id": "cred-1",
+      "userId": "2",
+      "type": "personal",
+      "amount": 10000,
+      "interestRate": 12.5,
+      "term": 24,
+      "monthlyPayment": 471.78,
+      "status": "approved",
+      "requestedAt": "2024-03-01T00:00:00.000Z",
+      "approvedAt": "2024-03-02T00:00:00.000Z"
+    },
+    {
+      "id": "cred-2",
+      "userId": "3",
+      "type": "hipotecario",
+      "amount": 150000,
+      "interestRate": 7.5,
+      "term": 240,
+      "monthlyPayment": 1207.85,
+      "status": "active",
+      "requestedAt": "2024-02-20T00:00:00.000Z",
+      "approvedAt": "2024-02-25T00:00:00.000Z"
+    }
+  ],
+  "transactions": [
+    {
+      "id": "tx-1",
+      "accountId": "acc-1",
+      "type": "deposit",
+      "amount": 5000,
+      "description": "Depósito inicial",
+      "date": "2024-01-15T10:00:00.000Z",
+      "status": "completed"
+    },
+    {
+      "id": "tx-2",
+      "accountId": "acc-1",
+      "type": "withdrawal",
+      "amount": 500,
+      "description": "Retiro cajero automático",
+      "date": "2024-01-20T15:30:00.000Z",
+      "status": "completed"
+    },
+    {
+      "id": "tx-3",
+      "accountId": "acc-2",
+      "type": "transfer",
+      "amount": 1000,
+      "description": "Transferencia a cuenta de ahorro",
+      "date": "2024-02-10T09:15:00.000Z",
+      "status": "completed",
+      "toAccountId": "acc-1"
+    },
+    {
+      "id": "tx-4",
+      "accountId": "acc-3",
+      "type": "deposit",
+      "amount": 25000,
+      "description": "Depósito empresarial",
+      "date": "2024-02-15T11:00:00.000Z",
+      "status": "completed"
+    }
+  ],
+  "services": [
+    {
+      "id": "srv-1",
+      "name": "Seguro de vida",
+      "type": "insurance",
+      "price": 25.00,
+      "description": "Protección financiera para tu familia"
+    },
+    {
+      "id": "srv-2",
+      "name": "Cashback Premium",
+      "type": "cashback",
+      "price": 15.00,
+      "description": "Obtén 2% de cashback en todas tus compras"
+    },
+    {
+      "id": "srv-3",
+      "name": "Asesoría financiera",
+      "type": "advisory",
+      "price": 50.00,
+      "description": "Consultoría personalizada con expertos"
+    }
+  ]
+}
