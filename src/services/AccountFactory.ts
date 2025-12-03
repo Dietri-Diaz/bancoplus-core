@@ -17,7 +17,7 @@ export class SavingsAccountFactory extends BankAccountFactory {
       type: 'ahorro',
       accountNumber,
       balance: initialBalance,
-      currency: 'USD',
+      currency: 'PEN',
       status: 'active',
       createdAt: new Date().toISOString(),
       interestRate: 2.5, // 2.5% anual para cuentas de ahorro
@@ -33,7 +33,7 @@ export class CheckingAccountFactory extends BankAccountFactory {
       type: 'corriente',
       accountNumber,
       balance: initialBalance,
-      currency: 'USD',
+      currency: 'PEN',
       status: 'active',
       createdAt: new Date().toISOString(),
       interestRate: 0, // Sin intereses para cuentas corrientes
@@ -49,8 +49,8 @@ export class BusinessAccountFactory extends BankAccountFactory {
       type: 'empresarial',
       accountNumber,
       balance: initialBalance,
-      currency: 'USD',
-      status: 'active',
+      currency: 'PEN',
+      status: 'pending', // Requiere aprobación del admin
       createdAt: new Date().toISOString(),
       interestRate: 1.5, // 1.5% anual para cuentas empresariales
     };

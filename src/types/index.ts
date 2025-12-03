@@ -18,9 +18,10 @@ export interface BankAccount {
   accountNumber: string;
   balance: number;
   currency: string;
-  status: 'active' | 'inactive' | 'suspended';
+  status: 'active' | 'inactive' | 'suspended' | 'pending';
   createdAt: string;
   interestRate: number;
+  creditId?: string; // Para cuentas vinculadas a créditos
 }
 
 export type CreditType = 'personal' | 'hipotecario' | 'empresarial';
