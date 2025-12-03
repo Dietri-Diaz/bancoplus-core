@@ -57,47 +57,58 @@ export class CreditScoreService {
     const userCredits = credits.filter(c => c.userId === userId);
     const userPayments = payments.filter(p => p.userId === userId);
 
-    // Calculate variables
+    // Contar pagos
+    const overduePayments = userPayments.filter(p => p.status === 'overdue').length;
     const onTimePayments = userPayments.filter(p => p.status === 'paid' && 
       new Date(p.paidAt || '') <= new Date(p.dueDate)).length;
-    const latePayments = userPayments.filter(p => p.status === 'overdue' || 
-      (p.status === 'paid' && new Date(p.paidAt || '') > new Date(p.dueDate))).length;
-    const activeDebts = userCredits.filter(c => c.status === 'active' || c.status === 'approved').length;
-    const pastDebtProblems = userPayments.some(p => p.status === 'overdue');
+    const latePayments = userPayments.filter(p => 
+      p.status === 'overdue' || 
+      (p.status === 'paid' && new Date(p.paidAt || '') > new Date(p.dueDate))
+    ).length;
     
-    // Credit requests in last 6 months
+    // Pagos pendientes próximos a vencer (dentro de 7 días)
+    const now = new Date();
+    const sevenDaysFromNow = new Date();
+    sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
+    
+    const pendingPaymentsSoon = userPayments.filter(p => {
+      if (p.status !== 'pending') return false;
+      const dueDate = new Date(p.dueDate);
+      return dueDate >= now && dueDate <= sevenDaysFromNow;
+    }).length;
+
+    const activeDebts = userCredits.filter(c => c.status === 'active' || c.status === 'approved').length;
+    const pastDebtProblems = latePayments > 0;
+    
     const sixMonthsAgo = new Date();
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
     const creditRequestsLast6Months = userCredits.filter(c => 
       new Date(c.requestedAt) >= sixMonthsAgo).length;
 
-    // Calculate score (0-1000)
-    let score = 700; // Base score
+    // LÓGICA SIMPLE:
+    // - Si tiene pagos atrasados (overdue) → MALO
+    // - Si tiene pagos próximos a vencer (7 días) → MEDIO
+    // - Si todos sus pagos son puntuales → BUENO
+    
+    let score: number;
+    let level: ScoreLevel;
 
-    // Factor 1: Payment history (most important, up to ±300 points)
-    const totalPayments = onTimePayments + latePayments;
-    if (totalPayments > 0) {
-      const onTimeRatio = onTimePayments / totalPayments;
-      score += Math.round((onTimeRatio - 0.5) * 600); // -300 to +300
+    if (overduePayments > 0) {
+      // Pagos atrasados = Score MALO
+      score = 250 + Math.max(0, 100 - (overduePayments * 20));
+      level = 'bad';
+    } else if (pendingPaymentsSoon > 0) {
+      // Pagos por vencer pronto = Score MEDIO
+      score = 550 + Math.min(100, onTimePayments * 5);
+      level = 'medium';
+    } else {
+      // Pagos puntuales = Score BUENO
+      score = 750 + Math.min(150, onTimePayments * 2);
+      level = 'good';
     }
 
-    // Factor 2: Active debts (up to -150 points)
-    if (activeDebts >= 4) score -= 150;
-    else if (activeDebts >= 2) score -= 75;
-    else if (activeDebts >= 1) score -= 25;
-
-    // Factor 3: Past debt problems (up to -200 points)
-    if (pastDebtProblems) score -= 100;
-    if (latePayments > 3) score -= 100;
-
-    // Factor 4: Credit request frequency (up to -100 points)
-    if (creditRequestsLast6Months >= 5) score -= 100;
-    else if (creditRequestsLast6Months >= 3) score -= 50;
-
-    // Clamp score to 0-1000
+    // Clamp score
     score = Math.max(0, Math.min(1000, score));
-
-    const level = this.getScoreLevel(score);
 
     const existingScore = allScores.find(s => s.userId === userId);
     const newScore: CreditScore = {
@@ -113,7 +124,6 @@ export class CreditScoreService {
       lastUpdated: new Date().toISOString(),
     };
 
-    // Save or update score
     if (existingScore) {
       await this.db.put(`/creditScores/${existingScore.id}`, newScore);
     } else {
