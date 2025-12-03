@@ -6,8 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import DatabaseConnection from '@/services/DatabaseConnection';
 import { CreditScoreService } from '@/services/CreditScoreService';
-import { Payment, Credit } from '@/types';
-import { Receipt, CheckCircle, Clock, AlertTriangle, Calendar, CreditCard, Banknote, TrendingUp, Lock } from 'lucide-react';
+import { Payment, Credit, User } from '@/types';
+import { Receipt, CheckCircle, Clock, AlertTriangle, Calendar, CreditCard, Banknote, TrendingUp, Lock, User as UserIcon } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
@@ -15,6 +15,7 @@ const Payments = () => {
   const { user } = useAuth();
   const [payments, setPayments] = useState<Payment[]>([]);
   const [credits, setCredits] = useState<Credit[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const db = DatabaseConnection.getInstance();
   const scoreService = CreditScoreService.getInstance();
@@ -27,11 +28,13 @@ const Payments = () => {
     if (!user) return;
     
     try {
-      const [paymentsData, creditsData] = await Promise.all([
+      const [paymentsData, creditsData, usersData] = await Promise.all([
         db.get<Payment[]>('/payments'),
         db.get<Credit[]>('/credits'),
+        db.get<User[]>('/users'),
       ]);
 
+      setUsers(usersData);
       const userPayments = user.role === 'admin'
         ? paymentsData
         : paymentsData.filter(p => p.userId === user.id);
@@ -423,8 +426,10 @@ const Payments = () => {
                   <Card className="border-0 shadow-xl overflow-hidden bg-gradient-to-br from-card to-card/50">
                     <CardContent className="p-0">
                       <div className="divide-y divide-border/30">
-                        {paidPayments.slice(0, 10).map((payment, index) => {
+                        {paidPayments.slice(0, 15).map((payment, index) => {
                           const credit = getCreditInfo(payment.creditId);
+                          const paymentUser = users.find(u => u.id === payment.userId);
+                          const isOverdue = payment.status === 'overdue';
                           
                           return (
                             <div 
@@ -433,20 +438,51 @@ const Payments = () => {
                               style={{ animationDelay: `${index * 50}ms` }}
                             >
                               <div className="flex items-center gap-4">
-                                <div className="p-3 rounded-xl bg-gradient-to-br from-success/20 to-success/5 shadow-md">
-                                  <CheckCircle className="h-6 w-6 text-success" />
+                                <div className={cn(
+                                  "p-3 rounded-xl shadow-md",
+                                  isOverdue 
+                                    ? "bg-gradient-to-br from-warning/20 to-warning/5" 
+                                    : "bg-gradient-to-br from-success/20 to-success/5"
+                                )}>
+                                  <CheckCircle className={cn(
+                                    "h-6 w-6",
+                                    isOverdue ? "text-warning" : "text-success"
+                                  )} />
                                 </div>
                                 <div>
                                   <p className="font-bold text-lg">
-                                    Cuota #{payment.paymentNumber}
+                                    Cuota {payment.paymentNumber} de {credit?.term || '?'}
                                   </p>
-                                  <p className="text-sm text-muted-foreground">
-                                    Crédito {getCreditTypeLabel(credit?.type || '')} • Pagado el {new Date(payment.paidAt || '').toLocaleDateString('es-PE')}
-                                  </p>
+                                  <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                                    <span className="font-medium text-primary">
+                                      Crédito {getCreditTypeLabel(credit?.type || '')}
+                                    </span>
+                                    <span>•</span>
+                                    <span>
+                                      Pagado el {new Date(payment.paidAt || '').toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+                                    <UserIcon className="h-3 w-3" />
+                                    <span>{paymentUser?.name || 'Usuario'}</span>
+                                    <span className="font-mono bg-secondary/50 px-2 py-0.5 rounded">
+                                      ID: {payment.id}
+                                    </span>
+                                  </div>
                                 </div>
                               </div>
                               <div className="text-right">
-                                <p className="font-bold text-xl text-success">S/ {payment.amount.toFixed(2)}</p>
+                                <p className={cn(
+                                  "font-bold text-xl",
+                                  isOverdue ? "text-warning" : "text-success"
+                                )}>
+                                  S/ {payment.amount.toFixed(2)}
+                                </p>
+                                {isOverdue && (
+                                  <Badge variant="outline" className="text-xs bg-warning/10 text-warning border-warning/30">
+                                    Pagado tarde
+                                  </Badge>
+                                )}
                               </div>
                             </div>
                           );
