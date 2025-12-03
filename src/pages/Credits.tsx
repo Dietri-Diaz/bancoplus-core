@@ -134,7 +134,7 @@ const Credits = () => {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="amount">Monto Solicitado (USD)</Label>
+                    <Label htmlFor="amount">Monto Solicitado (S/)</Label>
                     <Input
                       id="amount"
                       type="number"
@@ -204,13 +204,13 @@ const Credits = () => {
                         <div>
                           <p className="text-sm text-muted-foreground mb-1">Monto</p>
                           <p className="text-2xl font-bold text-foreground">
-                            ${credit.amount.toLocaleString('en-US')}
+                            S/{credit.amount.toLocaleString('es-PE')}
                           </p>
                         </div>
                         <div>
                           <p className="text-sm text-muted-foreground mb-1">Cuota Mensual</p>
                           <p className="text-2xl font-bold text-primary">
-                            ${credit.monthlyPayment.toFixed(2)}
+                            S/{credit.monthlyPayment.toFixed(2)}
                           </p>
                         </div>
                       </div>
@@ -227,7 +227,7 @@ const Credits = () => {
                         <div className="flex items-center justify-between text-sm">
                           <span className="text-muted-foreground">Total a Pagar:</span>
                           <span className="font-semibold">
-                            ${(credit.monthlyPayment * credit.term).toFixed(2)}
+                            S/{(credit.monthlyPayment * credit.term).toFixed(2)}
                           </span>
                         </div>
                       </div>

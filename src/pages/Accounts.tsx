@@ -121,7 +121,7 @@ const Accounts = () => {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="balance">Balance Inicial (USD)</Label>
+                    <Label htmlFor="balance">Balance Inicial (S/)</Label>
                     <Input
                       id="balance"
                       type="number"
@@ -175,7 +175,7 @@ const Accounts = () => {
                         <div>
                           <p className="text-sm text-muted-foreground mb-1">Balance Actual</p>
                           <p className="text-3xl font-bold text-foreground">
-                            ${account.balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                            S/{account.balance.toLocaleString('es-PE', { minimumFractionDigits: 2 })}
                           </p>
                           <p className="text-xs text-muted-foreground mt-1">{account.currency}</p>
                         </div>
@@ -194,7 +194,7 @@ const Accounts = () => {
                           <div className="p-3 bg-success/10 border border-success/20 rounded-lg">
                             <p className="text-xs text-muted-foreground mb-1">Interés proyectado (12 meses)</p>
                             <p className="text-lg font-bold text-success">
-                              +${projectedInterest.toFixed(2)}
+                              +S/{projectedInterest.toFixed(2)}
                             </p>
                           </div>
                         )}

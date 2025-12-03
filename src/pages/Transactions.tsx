@@ -194,7 +194,7 @@ const Transactions = () => {
                         <SelectContent>
                           {accounts.map((acc) => (
                             <SelectItem key={acc.id} value={acc.id}>
-                              {acc.accountNumber} - ${acc.balance.toFixed(2)}
+                              {acc.accountNumber} - S/{acc.balance.toFixed(2)}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -213,7 +213,7 @@ const Transactions = () => {
                               .filter(acc => acc.id !== selectedAccount)
                               .map((acc) => (
                                 <SelectItem key={acc.id} value={acc.id}>
-                                  {acc.accountNumber} - ${acc.balance.toFixed(2)}
+                                  {acc.accountNumber} - S/{acc.balance.toFixed(2)}
                                 </SelectItem>
                               ))}
                           </SelectContent>
@@ -222,7 +222,7 @@ const Transactions = () => {
                     )}
 
                     <div className="space-y-2">
-                      <Label htmlFor="amount">Monto (USD)</Label>
+                      <Label htmlFor="amount">Monto (S/)</Label>
                       <Input
                         id="amount"
                         type="number"
@@ -297,7 +297,7 @@ const Transactions = () => {
                         </div>
                         <div className="text-right">
                           <p className={`text-lg font-bold ${tx.type === 'deposit' ? 'text-success' : 'text-destructive'}`}>
-                            {tx.type === 'deposit' ? '+' : '-'}${tx.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                            {tx.type === 'deposit' ? '+' : '-'}S/{tx.amount.toLocaleString('es-PE', { minimumFractionDigits: 2 })}
                           </p>
                           <p className="text-xs text-muted-foreground">
                             {new Date(tx.date).toLocaleDateString('es-ES', { 
