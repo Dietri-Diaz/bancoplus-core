@@ -9,7 +9,7 @@ export interface CreditFactory {
 
 export class PersonalCreditFactory implements CreditFactory {
   calculateInterestRate(amount: number): number {
-    // Tasas basadas en el monto
+    // Tasas basadas en el monto (en soles)
     if (amount < 5000) return 15.0;
     if (amount < 15000) return 12.5;
     return 10.0;
@@ -32,6 +32,8 @@ export class PersonalCreditFactory implements CreditFactory {
       interestRate: rate,
       term,
       monthlyPayment: this.calculateMonthlyPayment(amount, rate, term),
+      remainingPayments: term,
+      paidAmount: 0,
       status: 'pending',
       requestedAt: new Date().toISOString(),
     };
@@ -40,7 +42,7 @@ export class PersonalCreditFactory implements CreditFactory {
 
 export class MortgageCreditFactory implements CreditFactory {
   calculateInterestRate(amount: number): number {
-    // Tasas más bajas para hipotecas
+    // Tasas más bajas para hipotecas (en soles)
     if (amount < 100000) return 8.5;
     if (amount < 200000) return 7.5;
     return 6.5;
@@ -63,6 +65,8 @@ export class MortgageCreditFactory implements CreditFactory {
       interestRate: rate,
       term,
       monthlyPayment: this.calculateMonthlyPayment(amount, rate, term),
+      remainingPayments: term,
+      paidAmount: 0,
       status: 'pending',
       requestedAt: new Date().toISOString(),
     };
@@ -71,7 +75,7 @@ export class MortgageCreditFactory implements CreditFactory {
 
 export class BusinessCreditFactory implements CreditFactory {
   calculateInterestRate(amount: number): number {
-    // Tasas comerciales
+    // Tasas comerciales (en soles)
     if (amount < 50000) return 14.0;
     if (amount < 100000) return 11.5;
     return 9.0;
@@ -94,6 +98,8 @@ export class BusinessCreditFactory implements CreditFactory {
       interestRate: rate,
       term,
       monthlyPayment: this.calculateMonthlyPayment(amount, rate, term),
+      remainingPayments: term,
+      paidAmount: 0,
       status: 'pending',
       requestedAt: new Date().toISOString(),
     };

@@ -9,6 +9,7 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Accounts from "./pages/Accounts";
 import Credits from "./pages/Credits";
+import Payments from "./pages/Payments";
 import Transactions from "./pages/Transactions";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
@@ -46,6 +47,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Credits />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/payments"
+              element={
+                <ProtectedRoute>
+                  <Payments />
                 </ProtectedRoute>
               }
             />
