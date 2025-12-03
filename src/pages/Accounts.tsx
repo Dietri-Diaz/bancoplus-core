@@ -11,7 +11,8 @@ import DatabaseConnection from '@/services/DatabaseConnection';
 import { getAccountFactory } from '@/services/AccountFactory';
 import { InterestCalculator } from '@/services/InterestStrategy';
 import { BankAccount, AccountType } from '@/types';
-import { Plus, Wallet, TrendingUp } from 'lucide-react';
+import { Plus, Wallet, TrendingUp, Clock } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
 
 const Accounts = () => {
@@ -52,10 +53,17 @@ const Accounts = () => {
 
       await db.post('/accounts', newAccount);
       
-      toast({
-        title: "Cuenta creada exitosamente",
-        description: `Tu cuenta ${accountType} ha sido creada con éxito`,
-      });
+      if (accountType === 'empresarial') {
+        toast({
+          title: "Solicitud enviada",
+          description: "Tu cuenta empresarial está pendiente de aprobación por el administrador",
+        });
+      } else {
+        toast({
+          title: "Cuenta creada exitosamente",
+          description: `Tu cuenta ${accountType} ha sido creada con éxito`,
+        });
+      }
 
       setOpen(false);
       loadAccounts();
@@ -202,9 +210,16 @@ const Accounts = () => {
                         <div className="pt-2 border-t border-border">
                           <div className="flex items-center justify-between text-xs">
                             <span className="text-muted-foreground">Estado:</span>
-                            <span className={`font-medium capitalize ${account.status === 'active' ? 'text-success' : 'text-muted-foreground'}`}>
-                              {account.status === 'active' ? 'Activa' : account.status}
-                            </span>
+                            {account.status === 'pending' ? (
+                              <Badge variant="outline" className="bg-warning/10 text-warning border-warning/30 text-xs">
+                                <Clock className="h-3 w-3 mr-1" />
+                                Pendiente de aprobación
+                              </Badge>
+                            ) : (
+                              <span className={`font-medium capitalize ${account.status === 'active' ? 'text-success' : 'text-muted-foreground'}`}>
+                                {account.status === 'active' ? 'Activa' : account.status}
+                              </span>
+                            )}
                           </div>
                           <div className="flex items-center justify-between text-xs mt-1">
                             <span className="text-muted-foreground">Creada:</span>

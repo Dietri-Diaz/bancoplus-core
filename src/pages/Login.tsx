@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Building2, Lock, Mail, User, Sparkles } from 'lucide-react';
+import { Building2, Lock, Mail, User } from 'lucide-react';
 import DatabaseConnection from '@/services/DatabaseConnection';
 import { User as UserType } from '@/types';
 import { toast } from '@/hooks/use-toast';
@@ -57,15 +57,12 @@ const Login = () => {
         return;
       }
 
-      // First user is admin, rest are regular users
-      const isFirstUser = users.length === 0;
-      
       const newUser: UserType = {
         id: `${Date.now()}`,
         email,
         password,
         name,
-        role: isFirstUser ? 'admin' : 'user',
+        role: 'user',
         createdAt: new Date().toISOString(),
       };
 
@@ -73,9 +70,7 @@ const Login = () => {
 
       toast({
         title: "¡Registro exitoso!",
-        description: isFirstUser 
-          ? "Tu cuenta de administrador ha sido creada. Ahora puedes iniciar sesión."
-          : "Tu cuenta ha sido creada. Ahora puedes iniciar sesión.",
+        description: "Tu cuenta ha sido creada. Ahora puedes iniciar sesión.",
       });
 
       // Auto login after registration
@@ -226,10 +221,6 @@ const Login = () => {
                   </Button>
                 </form>
 
-                <div className="mt-4 flex items-center gap-2 text-xs text-muted-foreground bg-secondary/50 p-3 rounded-lg">
-                  <Sparkles className="h-4 w-4 text-primary" />
-                  <span>El primer usuario registrado será administrador automáticamente</span>
-                </div>
               </TabsContent>
             </Tabs>
           </CardContent>

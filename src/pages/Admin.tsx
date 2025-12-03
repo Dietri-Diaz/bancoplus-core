@@ -11,8 +11,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import DatabaseConnection from '@/services/DatabaseConnection';
 import { CreditScoreService } from '@/services/CreditScoreService';
-import { User, UserRole, Credit, CreditScore, Payment } from '@/types';
-import { Plus, Users, Shield, Mail, CreditCard, CheckCircle, XCircle, Clock, Gauge, AlertTriangle } from 'lucide-react';
+import { User, UserRole, Credit, CreditScore, Payment, BankAccount } from '@/types';
+import { Plus, Users, Shield, Mail, CreditCard, CheckCircle, XCircle, Clock, Gauge, AlertTriangle, Building2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
@@ -20,6 +20,7 @@ const Admin = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [credits, setCredits] = useState<Credit[]>([]);
   const [creditScores, setCreditScores] = useState<CreditScore[]>([]);
+  const [accounts, setAccounts] = useState<BankAccount[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState('');
@@ -38,14 +39,16 @@ const Admin = () => {
 
   const loadData = async () => {
     try {
-      const [usersData, creditsData, scoresData] = await Promise.all([
+      const [usersData, creditsData, scoresData, accountsData] = await Promise.all([
         db.get<User[]>('/users'),
         db.get<Credit[]>('/credits'),
         db.get<CreditScore[]>('/creditScores'),
+        db.get<BankAccount[]>('/accounts'),
       ]);
       setUsers(usersData);
       setCredits(creditsData);
       setCreditScores(scoresData);
+      setAccounts(accountsData);
     } catch (error) {
       console.error('Error al cargar datos:', error);
     } finally {
@@ -118,6 +121,22 @@ const Admin = () => {
       };
       await db.put(`/credits/${credit.id}`, updatedCredit);
 
+      // Create account for credit amount
+      const accountNumber = `CRED-${Math.floor(Math.random() * 10000)}-${Math.floor(Math.random() * 10000)}`;
+      const creditAccount: BankAccount = {
+        id: `acc-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        userId: credit.userId,
+        type: 'corriente',
+        accountNumber,
+        balance: credit.amount,
+        currency: 'PEN',
+        status: 'active',
+        createdAt: new Date().toISOString(),
+        interestRate: 0,
+        creditId: credit.id,
+      };
+      await db.post('/accounts', creditAccount);
+
       // Create first payment if not exists
       const payments = await db.get<Payment[]>('/payments');
       const existingPayment = payments.find(p => p.creditId === credit.id);
@@ -137,7 +156,7 @@ const Admin = () => {
 
       toast({
         title: "Crédito aprobado",
-        description: "El crédito ha sido aprobado y activado",
+        description: `El crédito ha sido aprobado. Se creó una cuenta con S/ ${credit.amount.toLocaleString('es-PE')}`,
       });
 
       loadData();
@@ -188,6 +207,49 @@ const Admin = () => {
   };
 
   const pendingCredits = credits.filter(c => c.status === 'pending');
+  const pendingAccounts = accounts.filter(a => a.status === 'pending');
+
+  const handleApproveAccount = async (account: BankAccount) => {
+    try {
+      const updatedAccount: BankAccount = {
+        ...account,
+        status: 'active',
+      };
+      await db.put(`/accounts/${account.id}`, updatedAccount);
+
+      toast({
+        title: "Cuenta aprobada",
+        description: `La cuenta empresarial ha sido activada`,
+      });
+
+      loadData();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudo aprobar la cuenta",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleRejectAccount = async (account: BankAccount) => {
+    try {
+      await db.delete(`/accounts/${account.id}`);
+
+      toast({
+        title: "Cuenta rechazada",
+        description: `La solicitud de cuenta empresarial ha sido rechazada`,
+      });
+
+      loadData();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudo rechazar la cuenta",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <div className="flex h-screen bg-background">
@@ -272,10 +334,19 @@ const Admin = () => {
               <TabsList className="bg-secondary/50">
                 <TabsTrigger value="credits" className="gap-2 data-[state=active]:gradient-primary data-[state=active]:text-primary-foreground">
                   <CreditCard className="h-4 w-4" />
-                  Solicitudes de Crédito
+                  Créditos
                   {pendingCredits.length > 0 && (
                     <Badge variant="destructive" className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
                       {pendingCredits.length}
+                    </Badge>
+                  )}
+                </TabsTrigger>
+                <TabsTrigger value="accounts" className="gap-2 data-[state=active]:gradient-primary data-[state=active]:text-primary-foreground">
+                  <Building2 className="h-4 w-4" />
+                  Cuentas
+                  {pendingAccounts.length > 0 && (
+                    <Badge variant="destructive" className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
+                      {pendingAccounts.length}
                     </Badge>
                   )}
                 </TabsTrigger>
@@ -445,6 +516,81 @@ const Admin = () => {
                       </div>
                     </CardContent>
                   </Card>
+                )}
+              </TabsContent>
+
+              {/* Accounts Tab */}
+              <TabsContent value="accounts" className="space-y-4">
+                {pendingAccounts.length === 0 ? (
+                  <Card className="border-0 shadow-card">
+                    <CardContent className="py-12 text-center">
+                      <CheckCircle className="h-16 w-16 text-success mx-auto mb-4" />
+                      <p className="text-xl font-semibold mb-2">No hay cuentas pendientes</p>
+                      <p className="text-muted-foreground">Todas las solicitudes de cuentas han sido procesadas</p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <div className="grid gap-6 md:grid-cols-2">
+                    {pendingAccounts.map((account) => (
+                      <Card key={account.id} className="border-0 shadow-card">
+                        <CardHeader>
+                          <div className="flex items-center justify-between">
+                            <CardTitle className="capitalize">Cuenta {account.type}</CardTitle>
+                            <Badge variant="outline" className="bg-warning/10 text-warning border-warning/30">
+                              <Clock className="h-3 w-3 mr-1" />
+                              Pendiente
+                            </Badge>
+                          </div>
+                          <CardDescription>
+                            Solicitado por: {getUserName(account.userId)}
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-4">
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <p className="text-sm text-muted-foreground">Balance Inicial</p>
+                                <p className="text-xl font-bold">S/ {account.balance.toLocaleString('es-PE')}</p>
+                              </div>
+                              <div>
+                                <p className="text-sm text-muted-foreground">Tasa de Interés</p>
+                                <p className="text-xl font-bold text-primary">{account.interestRate}% anual</p>
+                              </div>
+                            </div>
+
+                            <div className="p-3 bg-secondary/30 rounded-lg space-y-1 text-sm">
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Número de cuenta:</span>
+                                <span className="font-medium font-mono">{account.accountNumber}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Fecha solicitud:</span>
+                                <span className="font-medium">{new Date(account.createdAt).toLocaleDateString('es-PE')}</span>
+                              </div>
+                            </div>
+
+                            <div className="flex gap-3">
+                              <Button 
+                                onClick={() => handleApproveAccount(account)}
+                                className="flex-1 gradient-success text-success-foreground hover:opacity-90"
+                              >
+                                <CheckCircle className="h-4 w-4 mr-2" />
+                                Aprobar
+                              </Button>
+                              <Button 
+                                variant="outline"
+                                onClick={() => handleRejectAccount(account)}
+                                className="flex-1 border-destructive/30 text-destructive hover:bg-destructive/10"
+                              >
+                                <XCircle className="h-4 w-4 mr-2" />
+                                Rechazar
+                              </Button>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
                 )}
               </TabsContent>
 
