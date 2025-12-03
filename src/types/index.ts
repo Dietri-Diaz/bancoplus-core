@@ -33,9 +33,12 @@ export interface Credit {
   interestRate: number;
   term: number;
   monthlyPayment: number;
+  remainingPayments: number;
+  paidAmount: number;
   status: 'pending' | 'approved' | 'active' | 'rejected' | 'completed';
   requestedAt: string;
   approvedAt?: string;
+  rejectionReason?: string;
 }
 
 export type TransactionType = 'deposit' | 'withdrawal' | 'transfer';
@@ -59,4 +62,37 @@ export interface AdditionalService {
   type: ServiceType;
   price: number;
   description: string;
+}
+
+// Payment types
+export interface Payment {
+  id: string;
+  creditId: string;
+  userId: string;
+  amount: number;
+  dueDate: string;
+  paidAt?: string;
+  status: 'pending' | 'paid' | 'overdue';
+  paymentNumber: number;
+}
+
+// Credit Score types
+export type ScoreLevel = 'good' | 'medium' | 'bad';
+
+export const SCORE_THRESHOLDS = {
+  GOOD: 700,
+  MEDIUM: 400,
+} as const;
+
+export interface CreditScore {
+  id: string;
+  userId: string;
+  score: number;
+  level: ScoreLevel;
+  onTimePayments: number;
+  latePayments: number;
+  activeDebts: number;
+  pastDebtProblems: boolean;
+  creditRequestsLast6Months: number;
+  lastUpdated: string;
 }
