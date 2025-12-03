@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Sidebar } from '@/components/Sidebar';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import DatabaseConnection from '@/services/DatabaseConnection';
 import { CreditScoreService } from '@/services/CreditScoreService';
 import { Payment, Credit } from '@/types';
-import { Receipt, CheckCircle, Clock, AlertTriangle, Calendar, CreditCard, Banknote, TrendingUp } from 'lucide-react';
+import { Receipt, CheckCircle, Clock, AlertTriangle, Calendar, CreditCard, Banknote, TrendingUp, Lock } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
@@ -62,10 +62,41 @@ const Payments = () => {
     }
   };
 
-  const canMakePayment = (payment: Payment): boolean => {
+  // Check if payment can be made (only 1 payment per month)
+  const canMakePayment = (payment: Payment): { canPay: boolean; reason?: string } => {
     const creditPayments = payments.filter(p => p.creditId === payment.creditId);
     const paidPayments = creditPayments.filter(p => p.status === 'paid');
-    return payment.paymentNumber === paidPayments.length + 1;
+    
+    // Check if this is the next payment in sequence
+    if (payment.paymentNumber !== paidPayments.length + 1) {
+      return { canPay: false, reason: 'Debe pagar las cuotas en orden' };
+    }
+
+    // Check if already paid this month
+    const lastPaidPayment = paidPayments
+      .filter(p => p.paidAt)
+      .sort((a, b) => new Date(b.paidAt!).getTime() - new Date(a.paidAt!).getTime())[0];
+    
+    if (lastPaidPayment?.paidAt) {
+      const lastPaymentDate = new Date(lastPaidPayment.paidAt);
+      const now = new Date();
+      
+      // Check if the last payment was made in the current month
+      const lastPaymentMonth = lastPaymentDate.getMonth();
+      const lastPaymentYear = lastPaymentDate.getFullYear();
+      const currentMonth = now.getMonth();
+      const currentYear = now.getFullYear();
+      
+      if (lastPaymentMonth === currentMonth && lastPaymentYear === currentYear) {
+        const nextMonth = new Date(currentYear, currentMonth + 1, 1);
+        return { 
+          canPay: false, 
+          reason: `Próximo pago disponible: ${nextMonth.toLocaleDateString('es-PE', { month: 'long', year: 'numeric' })}` 
+        };
+      }
+    }
+    
+    return { canPay: true };
   };
 
   const getNextPaymentDate = (payment: Payment): string => {
@@ -85,6 +116,16 @@ const Payments = () => {
 
   const handlePayment = async (payment: Payment) => {
     if (!user) return;
+
+    const paymentStatus = canMakePayment(payment);
+    if (!paymentStatus.canPay) {
+      toast({
+        title: "No disponible",
+        description: paymentStatus.reason,
+        variant: "destructive",
+      });
+      return;
+    }
 
     const credit = credits.find(c => c.id === payment.creditId);
     if (!credit) return;
@@ -106,13 +147,17 @@ const Payments = () => {
       await db.put(`/credits/${credit.id}`, updatedCredit);
 
       if (updatedCredit.remainingPayments > 0) {
+        // Set next payment due date for next month
+        const nextDueDate = new Date();
+        nextDueDate.setMonth(nextDueDate.getMonth() + 1);
+        
         const nextPayment: Payment = {
           id: `pay-${Date.now()}`,
           creditId: credit.id,
           userId: user.id,
           amount: credit.monthlyPayment,
           paymentNumber: payment.paymentNumber + 1,
-          dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          dueDate: nextDueDate.toISOString(),
           status: 'pending',
         };
         await db.post('/payments', nextPayment);
@@ -174,7 +219,6 @@ const Payments = () => {
       return { credit, nextPayment, paidCount, totalPayments: credit.term };
     });
 
-  const pendingPayments = payments.filter(p => p.status === 'pending' || p.status === 'overdue');
   const paidPayments = payments.filter(p => p.status === 'paid');
 
   return (
@@ -194,20 +238,23 @@ const Payments = () => {
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
             </div>
           ) : credits.filter(c => c.status === 'active').length === 0 ? (
-            <Card className="border-0 shadow-card bg-gradient-to-br from-card to-card/50">
-              <CardContent className="py-12 text-center">
-                <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                  <Receipt className="h-10 w-10 text-primary" />
+            <Card className="border-0 shadow-xl bg-gradient-to-br from-card via-card to-secondary/20 overflow-hidden">
+              <CardContent className="py-16 text-center relative">
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent" />
+                <div className="relative">
+                  <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center mx-auto mb-6 shadow-lg">
+                    <Receipt className="h-12 w-12 text-primary" />
+                  </div>
+                  <p className="text-2xl font-bold mb-2">No hay créditos activos</p>
+                  <p className="text-muted-foreground">Los pagos aparecerán aquí cuando tengas créditos activos</p>
                 </div>
-                <p className="text-xl font-semibold mb-2">No hay créditos activos</p>
-                <p className="text-muted-foreground">Los pagos aparecerán aquí cuando tengas créditos activos</p>
               </CardContent>
             </Card>
           ) : (
             <div className="space-y-8">
               {/* Credit Cards with Next Payment */}
               <div>
-                <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
                   <CreditCard className="h-5 w-5 text-primary" />
                   Mis Créditos Activos
                 </h2>
@@ -216,41 +263,43 @@ const Payments = () => {
                     const daysUntilDue = nextPayment ? getDaysUntilDue(nextPayment.dueDate) : 0;
                     const isOverdue = nextPayment?.status === 'overdue';
                     const progress = (paidCount / totalPayments) * 100;
+                    const paymentStatus = nextPayment ? canMakePayment(nextPayment) : { canPay: false };
                     
                     return (
                       <Card 
                         key={credit.id} 
                         className={cn(
-                          "overflow-hidden border-0 shadow-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-1",
-                          isOverdue ? "ring-2 ring-destructive/50" : "ring-1 ring-border/50"
+                          "overflow-hidden border-0 shadow-xl transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 group",
+                          isOverdue ? "ring-2 ring-destructive/50" : "ring-1 ring-border/20"
                         )}
                       >
                         {/* Header with gradient */}
                         <div className={cn(
-                          "p-4 text-primary-foreground",
+                          "p-5 text-primary-foreground relative overflow-hidden",
                           isOverdue 
-                            ? "bg-gradient-to-r from-destructive to-destructive/80" 
-                            : "bg-gradient-to-r from-primary to-primary/80"
+                            ? "bg-gradient-to-br from-destructive via-destructive to-destructive/80" 
+                            : "bg-gradient-to-br from-primary via-primary to-primary/80"
                         )}>
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <div className="p-2 rounded-lg bg-white/20">
-                                <Banknote className="h-5 w-5" />
+                          <div className="absolute inset-0 opacity-50" style={{backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='30' height='30' viewBox='0 0 30 30' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1.22676 0C1.91374 0 2.45351 0.539773 2.45351 1.22676C2.45351 1.91374 1.91374 2.45351 1.22676 2.45351C0.539773 2.45351 0 1.91374 0 1.22676C0 0.539773 0.539773 0 1.22676 0Z' fill='rgba(255,255,255,0.07)'%3E%3C/path%3E%3C/svg%3E\")"}} />
+                          <div className="flex items-center justify-between relative">
+                            <div className="flex items-center gap-3">
+                              <div className="p-3 rounded-xl bg-white/20 backdrop-blur-sm shadow-lg group-hover:scale-110 transition-transform">
+                                <Banknote className="h-6 w-6" />
                               </div>
                               <div>
-                                <p className="text-sm opacity-90">Crédito</p>
-                                <p className="font-bold text-lg">{getCreditTypeLabel(credit.type)}</p>
+                                <p className="text-sm opacity-80">Crédito</p>
+                                <p className="font-bold text-xl">{getCreditTypeLabel(credit.type)}</p>
                               </div>
                             </div>
                             {nextPayment && getStatusBadge(nextPayment.status)}
                           </div>
                         </div>
 
-                        <CardContent className="p-5 space-y-4">
+                        <CardContent className="p-6 space-y-5">
                           {/* Amount */}
-                          <div className="text-center py-2">
+                          <div className="text-center py-4 rounded-xl bg-gradient-to-br from-secondary/50 to-secondary/20">
                             <p className="text-sm text-muted-foreground mb-1">Próxima cuota</p>
-                            <p className="text-3xl font-bold text-foreground">
+                            <p className="text-4xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
                               S/ {nextPayment?.amount.toFixed(2) || credit.monthlyPayment.toFixed(2)}
                             </p>
                           </div>
@@ -258,14 +307,19 @@ const Payments = () => {
                           {/* Due Date */}
                           {nextPayment && (
                             <div className={cn(
-                              "rounded-lg p-3 flex items-center justify-between",
-                              isOverdue ? "bg-destructive/10" : "bg-secondary/50"
+                              "rounded-xl p-4 flex items-center justify-between border",
+                              isOverdue ? "bg-destructive/5 border-destructive/20" : "bg-secondary/30 border-border/50"
                             )}>
-                              <div className="flex items-center gap-2">
-                                <Calendar className={cn(
-                                  "h-5 w-5",
-                                  isOverdue ? "text-destructive" : "text-primary"
-                                )} />
+                              <div className="flex items-center gap-3">
+                                <div className={cn(
+                                  "p-2 rounded-lg",
+                                  isOverdue ? "bg-destructive/10" : "bg-primary/10"
+                                )}>
+                                  <Calendar className={cn(
+                                    "h-5 w-5",
+                                    isOverdue ? "text-destructive" : "text-primary"
+                                  )} />
+                                </div>
                                 <div>
                                   <p className="text-xs text-muted-foreground">Fecha de vencimiento</p>
                                   <p className={cn(
@@ -277,7 +331,7 @@ const Payments = () => {
                                 </div>
                               </div>
                               <div className={cn(
-                                "text-right px-3 py-1 rounded-full text-sm font-medium",
+                                "text-right px-3 py-1.5 rounded-lg text-sm font-bold",
                                 isOverdue 
                                   ? "bg-destructive/20 text-destructive" 
                                   : daysUntilDue <= 7 
@@ -293,44 +347,64 @@ const Payments = () => {
                           )}
 
                           {/* Progress */}
-                          <div className="space-y-2">
+                          <div className="space-y-3">
                             <div className="flex justify-between text-sm">
-                              <span className="text-muted-foreground">Progreso</span>
-                              <span className="font-medium">{paidCount} de {totalPayments} cuotas</span>
+                              <span className="text-muted-foreground">Progreso del crédito</span>
+                              <span className="font-bold">{paidCount} / {totalPayments} cuotas</span>
                             </div>
-                            <div className="h-2 bg-secondary rounded-full overflow-hidden">
+                            <div className="h-3 bg-secondary rounded-full overflow-hidden shadow-inner">
                               <div 
-                                className="h-full bg-gradient-to-r from-primary to-success rounded-full transition-all duration-500"
+                                className="h-full bg-gradient-to-r from-primary via-primary to-success rounded-full transition-all duration-700 shadow-lg"
                                 style={{ width: `${progress}%` }}
                               />
                             </div>
+                            <p className="text-xs text-muted-foreground text-center">
+                              {Math.round(progress)}% completado
+                            </p>
                           </div>
 
                           {/* Credit Details */}
-                          <div className="grid grid-cols-2 gap-3 pt-2 border-t border-border/50">
-                            <div className="text-center p-2 rounded-lg bg-secondary/30">
+                          <div className="grid grid-cols-2 gap-3 pt-3 border-t border-border/50">
+                            <div className="text-center p-3 rounded-xl bg-gradient-to-br from-secondary/50 to-secondary/20">
                               <p className="text-xs text-muted-foreground">Monto total</p>
-                              <p className="font-semibold text-sm">S/ {credit.amount.toLocaleString()}</p>
+                              <p className="font-bold text-lg">S/ {credit.amount.toLocaleString()}</p>
                             </div>
-                            <div className="text-center p-2 rounded-lg bg-secondary/30">
+                            <div className="text-center p-3 rounded-xl bg-gradient-to-br from-secondary/50 to-secondary/20">
                               <p className="text-xs text-muted-foreground">Tasa interés</p>
-                              <p className="font-semibold text-sm">{credit.interestRate}%</p>
+                              <p className="font-bold text-lg">{credit.interestRate}%</p>
                             </div>
                           </div>
 
                           {/* Pay Button */}
-                          {nextPayment && canMakePayment(nextPayment) && (
-                            <Button 
-                              onClick={() => handlePayment(nextPayment)}
-                              className={cn(
-                                "w-full font-semibold transition-all",
-                                isOverdue 
-                                  ? "bg-destructive hover:bg-destructive/90 text-destructive-foreground" 
-                                  : "gradient-primary text-primary-foreground hover:opacity-90"
+                          {nextPayment && (
+                            <div className="space-y-2">
+                              {paymentStatus.canPay ? (
+                                <Button 
+                                  onClick={() => handlePayment(nextPayment)}
+                                  className={cn(
+                                    "w-full font-bold text-lg py-6 transition-all shadow-lg hover:shadow-xl",
+                                    isOverdue 
+                                      ? "bg-gradient-to-r from-destructive to-destructive/80 hover:from-destructive/90 hover:to-destructive/70 text-destructive-foreground" 
+                                      : "bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground"
+                                  )}
+                                >
+                                  {isOverdue ? 'Pagar Ahora (Vencido)' : 'Realizar Pago'}
+                                </Button>
+                              ) : (
+                                <div className="space-y-2">
+                                  <Button 
+                                    disabled
+                                    className="w-full font-semibold py-6 bg-secondary/50 text-muted-foreground"
+                                  >
+                                    <Lock className="h-4 w-4 mr-2" />
+                                    Pago no disponible
+                                  </Button>
+                                  <p className="text-xs text-center text-muted-foreground">
+                                    {paymentStatus.reason}
+                                  </p>
+                                </div>
                               )}
-                            >
-                              {isOverdue ? 'Pagar Ahora (Vencido)' : 'Realizar Pago'}
-                            </Button>
+                            </div>
                           )}
                         </CardContent>
                       </Card>
@@ -342,27 +416,28 @@ const Payments = () => {
               {/* Payment History */}
               {paidPayments.length > 0 && (
                 <div>
-                  <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                  <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
                     <TrendingUp className="h-5 w-5 text-success" />
                     Historial de Pagos ({paidPayments.length})
                   </h2>
-                  <Card className="border-0 shadow-card overflow-hidden">
+                  <Card className="border-0 shadow-xl overflow-hidden bg-gradient-to-br from-card to-card/50">
                     <CardContent className="p-0">
-                      <div className="divide-y divide-border/50">
-                        {paidPayments.slice(0, 10).map((payment) => {
+                      <div className="divide-y divide-border/30">
+                        {paidPayments.slice(0, 10).map((payment, index) => {
                           const credit = getCreditInfo(payment.creditId);
                           
                           return (
                             <div 
                               key={payment.id} 
-                              className="flex items-center justify-between p-4 hover:bg-secondary/30 transition-colors"
+                              className="flex items-center justify-between p-5 hover:bg-secondary/20 transition-all duration-300"
+                              style={{ animationDelay: `${index * 50}ms` }}
                             >
                               <div className="flex items-center gap-4">
-                                <div className="p-3 rounded-xl bg-success/10">
-                                  <CheckCircle className="h-5 w-5 text-success" />
+                                <div className="p-3 rounded-xl bg-gradient-to-br from-success/20 to-success/5 shadow-md">
+                                  <CheckCircle className="h-6 w-6 text-success" />
                                 </div>
                                 <div>
-                                  <p className="font-semibold">
+                                  <p className="font-bold text-lg">
                                     Cuota #{payment.paymentNumber}
                                   </p>
                                   <p className="text-sm text-muted-foreground">
@@ -371,7 +446,7 @@ const Payments = () => {
                                 </div>
                               </div>
                               <div className="text-right">
-                                <p className="font-bold text-lg text-success">S/ {payment.amount.toFixed(2)}</p>
+                                <p className="font-bold text-xl text-success">S/ {payment.amount.toFixed(2)}</p>
                               </div>
                             </div>
                           );

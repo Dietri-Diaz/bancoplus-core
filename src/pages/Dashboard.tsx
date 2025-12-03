@@ -86,7 +86,9 @@ const Dashboard = () => {
       <main className="flex-1 overflow-y-auto">
         <div className="container py-8 animate-fade-in">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+              Dashboard
+            </h1>
             <p className="text-muted-foreground">Resumen de tu actividad bancaria</p>
           </div>
 
@@ -98,57 +100,70 @@ const Dashboard = () => {
             <>
               {/* Stats Cards */}
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
-                <Card className="relative overflow-hidden border-0 shadow-card">
-                  <div className="absolute inset-0 gradient-primary opacity-90" />
+                <Card className="relative overflow-hidden border-0 shadow-xl group hover:shadow-2xl transition-all duration-500 hover:-translate-y-1">
+                  <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary to-primary/80" />
+                  <div className="absolute inset-0 opacity-50" style={{backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='30' height='30' viewBox='0 0 30 30' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1.22676 0C1.91374 0 2.45351 0.539773 2.45351 1.22676C2.45351 1.91374 1.91374 2.45351 1.22676 2.45351C0.539773 2.45351 0 1.91374 0 1.22676C0 0.539773 0.539773 0 1.22676 0Z' fill='rgba(255,255,255,0.07)'%3E%3C/path%3E%3C/svg%3E\")"}} />
                   <CardHeader className="relative flex flex-row items-center justify-between pb-2">
                     <CardTitle className="text-sm font-medium text-primary-foreground/80">Balance Total</CardTitle>
-                    <Wallet className="h-5 w-5 text-primary-foreground/80" />
+                    <div className="p-2 rounded-lg bg-white/20 group-hover:scale-110 transition-transform">
+                      <Wallet className="h-5 w-5 text-primary-foreground" />
+                    </div>
                   </CardHeader>
                   <CardContent className="relative">
-                    <div className="text-2xl font-bold text-primary-foreground">
+                    <div className="text-3xl font-bold text-primary-foreground">
                       S/ {totalBalance.toLocaleString('es-PE', { minimumFractionDigits: 2 })}
                     </div>
-                    <p className="text-xs text-primary-foreground/70 mt-1">{accounts.length} cuentas activas</p>
+                    <p className="text-sm text-primary-foreground/70 mt-2">{accounts.length} cuentas activas</p>
                   </CardContent>
                 </Card>
 
-                <Card className="border-0 shadow-card">
+                <Card className="border-0 shadow-xl overflow-hidden group hover:shadow-2xl transition-all duration-500 hover:-translate-y-1 bg-gradient-to-br from-card to-secondary/20">
                   <CardHeader className="flex flex-row items-center justify-between pb-2">
                     <CardTitle className="text-sm font-medium text-muted-foreground">Créditos Activos</CardTitle>
-                    <CreditCard className="h-5 w-5 text-muted-foreground" />
+                    <div className="p-2 rounded-lg bg-secondary group-hover:scale-110 transition-transform">
+                      <CreditCard className="h-5 w-5 text-primary" />
+                    </div>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{activeCredits}</div>
-                    <p className="text-xs text-muted-foreground mt-1">De {credits.length} totales</p>
+                    <div className="text-3xl font-bold">{activeCredits}</div>
+                    <p className="text-sm text-muted-foreground mt-2">De {credits.length} totales</p>
                   </CardContent>
                 </Card>
 
-                <Card className="border-0 shadow-card">
+                <Card className="border-0 shadow-xl overflow-hidden group hover:shadow-2xl transition-all duration-500 hover:-translate-y-1 bg-gradient-to-br from-card to-secondary/20">
                   <CardHeader className="flex flex-row items-center justify-between pb-2">
                     <CardTitle className="text-sm font-medium text-muted-foreground">Transacciones</CardTitle>
-                    <ArrowLeftRight className="h-5 w-5 text-muted-foreground" />
+                    <div className="p-2 rounded-lg bg-secondary group-hover:scale-110 transition-transform">
+                      <ArrowLeftRight className="h-5 w-5 text-primary" />
+                    </div>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{transactions.length}</div>
-                    <p className="text-xs text-muted-foreground mt-1">Este mes</p>
+                    <div className="text-3xl font-bold">{transactions.length}</div>
+                    <p className="text-sm text-muted-foreground mt-2">Este mes</p>
                   </CardContent>
                 </Card>
 
                 {user?.role !== 'admin' && creditScore && (
-                  <Card className={cn("border-0 shadow-card relative overflow-hidden")}>
+                  <Card className={cn("border-0 shadow-xl relative overflow-hidden group hover:shadow-2xl transition-all duration-500 hover:-translate-y-1")}>
                     <div className={cn("absolute inset-0 bg-gradient-to-br", getScoreBg(creditScore.level))} />
                     <CardHeader className="relative flex flex-row items-center justify-between pb-2">
                       <CardTitle className="text-sm font-medium text-muted-foreground">Score Crediticio</CardTitle>
-                      <Gauge className={cn("h-5 w-5", getScoreColor(creditScore.level))} />
+                      <div className={cn("p-2 rounded-lg group-hover:scale-110 transition-transform", 
+                        creditScore.level === 'good' && "bg-success/20",
+                        creditScore.level === 'medium' && "bg-warning/20",
+                        creditScore.level === 'bad' && "bg-destructive/20"
+                      )}>
+                        <Gauge className={cn("h-5 w-5", getScoreColor(creditScore.level))} />
+                      </div>
                     </CardHeader>
                     <CardContent className="relative">
-                      <div className={cn("text-2xl font-bold", getScoreColor(creditScore.level))}>
+                      <div className={cn("text-3xl font-bold", getScoreColor(creditScore.level))}>
                         {creditScore.score}
                       </div>
                       <Badge 
                         variant="outline" 
                         className={cn(
-                          "mt-1 text-xs",
+                          "mt-2 text-xs font-semibold",
                           creditScore.level === 'good' && "border-success/50 text-success bg-success/10",
                           creditScore.level === 'medium' && "border-warning/50 text-warning bg-warning/10",
                           creditScore.level === 'bad' && "border-destructive/50 text-destructive bg-destructive/10"
@@ -161,15 +176,18 @@ const Dashboard = () => {
                 )}
 
                 {user?.role === 'admin' && (
-                  <Card className="relative overflow-hidden border-0 shadow-card">
-                    <div className="absolute inset-0 gradient-success opacity-90" />
+                  <Card className="relative overflow-hidden border-0 shadow-xl group hover:shadow-2xl transition-all duration-500 hover:-translate-y-1">
+                    <div className="absolute inset-0 bg-gradient-to-br from-success via-success to-success/80" />
+                    <div className="absolute inset-0 opacity-50" style={{backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='30' height='30' viewBox='0 0 30 30' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1.22676 0C1.91374 0 2.45351 0.539773 2.45351 1.22676C2.45351 1.91374 1.91374 2.45351 1.22676 2.45351C0.539773 2.45351 0 1.91374 0 1.22676C0 0.539773 0.539773 0 1.22676 0Z' fill='rgba(255,255,255,0.07)'%3E%3C/path%3E%3C/svg%3E\")"}} />
                     <CardHeader className="relative flex flex-row items-center justify-between pb-2">
                       <CardTitle className="text-sm font-medium text-success-foreground/80">Intereses Generados</CardTitle>
-                      <TrendingUp className="h-5 w-5 text-success-foreground/80" />
+                      <div className="p-2 rounded-lg bg-white/20 group-hover:scale-110 transition-transform">
+                        <TrendingUp className="h-5 w-5 text-success-foreground" />
+                      </div>
                     </CardHeader>
                     <CardContent className="relative">
-                      <div className="text-2xl font-bold text-success-foreground">S/ 425.50</div>
-                      <p className="text-xs text-success-foreground/70 mt-1">Últimos 30 días</p>
+                      <div className="text-3xl font-bold text-success-foreground">S/ 425.50</div>
+                      <p className="text-sm text-success-foreground/70 mt-2">Últimos 30 días</p>
                     </CardContent>
                   </Card>
                 )}
@@ -177,26 +195,37 @@ const Dashboard = () => {
 
               {/* Accounts and Transactions */}
               <div className="grid gap-6 lg:grid-cols-2">
-                <Card className="border-0 shadow-card">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Wallet className="h-5 w-5 text-primary" />
+                <Card className="border-0 shadow-xl overflow-hidden bg-gradient-to-br from-card to-card/50">
+                  <CardHeader className="border-b border-border/50">
+                    <CardTitle className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-primary/10">
+                        <Wallet className="h-5 w-5 text-primary" />
+                      </div>
                       Mis Cuentas
                     </CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
+                  <CardContent className="p-0">
+                    <div className="divide-y divide-border/30">
                       {accounts.length === 0 ? (
-                        <p className="text-muted-foreground text-sm py-8 text-center">No tienes cuentas registradas</p>
+                        <p className="text-muted-foreground text-sm py-12 text-center">No tienes cuentas registradas</p>
                       ) : (
-                        accounts.map((account) => (
-                          <div key={account.id} className="flex items-center justify-between p-4 bg-secondary/30 rounded-xl hover:bg-secondary/50 transition-colors">
-                            <div>
-                              <p className="font-semibold capitalize">{account.type}</p>
-                              <p className="text-xs text-muted-foreground font-mono">{account.accountNumber}</p>
+                        accounts.map((account, index) => (
+                          <div 
+                            key={account.id} 
+                            className="flex items-center justify-between p-5 hover:bg-secondary/30 transition-all duration-300"
+                            style={{ animationDelay: `${index * 50}ms` }}
+                          >
+                            <div className="flex items-center gap-4">
+                              <div className="p-3 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5">
+                                <Wallet className="h-5 w-5 text-primary" />
+                              </div>
+                              <div>
+                                <p className="font-bold capitalize text-lg">{account.type}</p>
+                                <p className="text-xs text-muted-foreground font-mono">{account.accountNumber}</p>
+                              </div>
                             </div>
                             <div className="text-right">
-                              <p className="font-bold text-lg">S/ {account.balance.toLocaleString('es-PE', { minimumFractionDigits: 2 })}</p>
+                              <p className="font-bold text-xl">S/ {account.balance.toLocaleString('es-PE', { minimumFractionDigits: 2 })}</p>
                               <p className="text-xs text-muted-foreground">PEN</p>
                             </div>
                           </div>
@@ -206,33 +235,39 @@ const Dashboard = () => {
                   </CardContent>
                 </Card>
 
-                <Card className="border-0 shadow-card">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <ArrowLeftRight className="h-5 w-5 text-primary" />
+                <Card className="border-0 shadow-xl overflow-hidden bg-gradient-to-br from-card to-card/50">
+                  <CardHeader className="border-b border-border/50">
+                    <CardTitle className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-primary/10">
+                        <ArrowLeftRight className="h-5 w-5 text-primary" />
+                      </div>
                       Transacciones Recientes
                     </CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
+                  <CardContent className="p-0">
+                    <div className="divide-y divide-border/30">
                       {recentTransactions.length === 0 ? (
-                        <p className="text-muted-foreground text-sm py-8 text-center">No hay transacciones recientes</p>
+                        <p className="text-muted-foreground text-sm py-12 text-center">No hay transacciones recientes</p>
                       ) : (
-                        recentTransactions.map((tx) => (
-                          <div key={tx.id} className="flex items-center justify-between p-4 bg-secondary/30 rounded-xl">
-                            <div className="flex items-center gap-3">
+                        recentTransactions.map((tx, index) => (
+                          <div 
+                            key={tx.id} 
+                            className="flex items-center justify-between p-5 hover:bg-secondary/30 transition-all duration-300"
+                            style={{ animationDelay: `${index * 50}ms` }}
+                          >
+                            <div className="flex items-center gap-4">
                               <div className={cn(
-                                "p-2 rounded-lg",
-                                tx.type === 'deposit' ? "bg-success/10" : "bg-destructive/10"
+                                "p-3 rounded-xl",
+                                tx.type === 'deposit' ? "bg-gradient-to-br from-success/20 to-success/5" : "bg-gradient-to-br from-destructive/20 to-destructive/5"
                               )}>
                                 {tx.type === 'deposit' ? (
-                                  <ArrowDownRight className="h-4 w-4 text-success" />
+                                  <ArrowDownRight className="h-5 w-5 text-success" />
                                 ) : (
-                                  <ArrowUpRight className="h-4 w-4 text-destructive" />
+                                  <ArrowUpRight className="h-5 w-5 text-destructive" />
                                 )}
                               </div>
                               <div>
-                                <p className="font-medium capitalize">
+                                <p className="font-bold capitalize">
                                   {tx.type === 'deposit' ? 'Depósito' : tx.type === 'withdrawal' ? 'Retiro' : 'Transferencia'}
                                 </p>
                                 <p className="text-xs text-muted-foreground">{tx.description}</p>
@@ -240,7 +275,7 @@ const Dashboard = () => {
                             </div>
                             <div className="text-right">
                               <p className={cn(
-                                "font-bold",
+                                "font-bold text-lg",
                                 tx.type === 'deposit' ? 'text-success' : 'text-destructive'
                               )}>
                                 {tx.type === 'deposit' ? '+' : '-'}S/ {tx.amount.toLocaleString('es-PE', { minimumFractionDigits: 2 })}

@@ -12,8 +12,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import DatabaseConnection from '@/services/DatabaseConnection';
 import { AccountProxyAccess } from '@/services/AccountProxy';
 import { BankAccount, Transaction, TransactionType } from '@/types';
-import { Plus, ArrowDownToLine, ArrowUpFromLine, ArrowLeftRight } from 'lucide-react';
+import { Plus, ArrowDownToLine, ArrowUpFromLine, ArrowLeftRight, Receipt } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
 const Transactions = () => {
   const { user } = useAuth();
@@ -94,16 +95,13 @@ const Transactions = () => {
         }
         newBalance -= transactionAmount;
 
-        // Actualizar cuenta destino
         const toAccountProxy = new AccountProxyAccess(user.id, user.role);
         const destinationAccount = await toAccountProxy.getAccount(toAccount);
         await toAccountProxy.updateBalance(toAccount, destinationAccount.balance + transactionAmount);
       }
 
-      // Actualizar balance usando el Proxy
       await accountProxy.updateBalance(selectedAccount, newBalance);
 
-      // Crear transacción
       const newTransaction: Transaction = {
         id: `tx-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         accountId: selectedAccount,
@@ -158,37 +156,39 @@ const Transactions = () => {
     <div className="flex h-screen bg-background">
       <Sidebar />
       <main className="flex-1 overflow-y-auto">
-        <div className="container py-8">
+        <div className="container py-8 animate-fade-in">
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h1 className="text-3xl font-bold text-foreground">Transacciones</h1>
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+                Transacciones
+              </h1>
               <p className="text-muted-foreground">Gestiona tus movimientos bancarios</p>
             </div>
             <Dialog open={open} onOpenChange={setOpen}>
               <DialogTrigger asChild>
-                <Button className="gap-2">
+                <Button className="gap-2 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg hover:shadow-xl transition-all">
                   <Plus className="h-4 w-4" />
                   Nueva Transacción
                 </Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="border-0 shadow-2xl">
                 <DialogHeader>
-                  <DialogTitle>Nueva Transacción</DialogTitle>
+                  <DialogTitle className="text-2xl">Nueva Transacción</DialogTitle>
                   <DialogDescription>
                     El Proxy valida permisos y controla el acceso a las cuentas
                   </DialogDescription>
                 </DialogHeader>
                 <Tabs value={transactionType} onValueChange={(v) => setTransactionType(v as TransactionType)}>
-                  <TabsList className="grid w-full grid-cols-3">
-                    <TabsTrigger value="deposit">Depósito</TabsTrigger>
-                    <TabsTrigger value="withdrawal">Retiro</TabsTrigger>
-                    <TabsTrigger value="transfer">Transferencia</TabsTrigger>
+                  <TabsList className="grid w-full grid-cols-3 h-12">
+                    <TabsTrigger value="deposit" className="text-sm font-semibold">Depósito</TabsTrigger>
+                    <TabsTrigger value="withdrawal" className="text-sm font-semibold">Retiro</TabsTrigger>
+                    <TabsTrigger value="transfer" className="text-sm font-semibold">Transferencia</TabsTrigger>
                   </TabsList>
                   <TabsContent value={transactionType} className="space-y-4 py-4">
                     <div className="space-y-2">
                       <Label htmlFor="account">Cuenta</Label>
                       <Select value={selectedAccount} onValueChange={setSelectedAccount}>
-                        <SelectTrigger id="account">
+                        <SelectTrigger id="account" className="h-12">
                           <SelectValue placeholder="Selecciona una cuenta" />
                         </SelectTrigger>
                         <SelectContent>
@@ -205,7 +205,7 @@ const Transactions = () => {
                       <div className="space-y-2">
                         <Label htmlFor="toAccount">Cuenta Destino</Label>
                         <Select value={toAccount} onValueChange={setToAccount}>
-                          <SelectTrigger id="toAccount">
+                          <SelectTrigger id="toAccount" className="h-12">
                             <SelectValue placeholder="Selecciona cuenta destino" />
                           </SelectTrigger>
                           <SelectContent>
@@ -231,6 +231,7 @@ const Transactions = () => {
                         placeholder="0.00"
                         value={amount}
                         onChange={(e) => setAmount(e.target.value)}
+                        className="h-12 text-lg"
                       />
                     </div>
 
@@ -241,10 +242,11 @@ const Transactions = () => {
                         placeholder="Descripción de la transacción"
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
+                        className="min-h-20"
                       />
                     </div>
 
-                    <Button onClick={handleTransaction} className="w-full">
+                    <Button onClick={handleTransaction} className="w-full h-12 text-lg font-semibold bg-gradient-to-r from-primary to-primary/80">
                       Realizar Transacción
                     </Button>
                   </TabsContent>
@@ -258,37 +260,63 @@ const Transactions = () => {
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
             </div>
           ) : transactions.length === 0 ? (
-            <Card>
-              <CardContent className="py-12 text-center">
-                <ArrowLeftRight className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                <p className="text-xl font-semibold mb-2">No hay transacciones</p>
-                <p className="text-muted-foreground mb-4">Realiza tu primera transacción</p>
-                <Button onClick={() => setOpen(true)}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Nueva Transacción
-                </Button>
+            <Card className="border-0 shadow-xl bg-gradient-to-br from-card via-card to-secondary/20 overflow-hidden">
+              <CardContent className="py-16 text-center relative">
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent" />
+                <div className="relative">
+                  <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center mx-auto mb-6 shadow-lg">
+                    <ArrowLeftRight className="h-12 w-12 text-primary" />
+                  </div>
+                  <p className="text-2xl font-bold mb-2">No hay transacciones</p>
+                  <p className="text-muted-foreground mb-6">Realiza tu primera transacción</p>
+                  <Button onClick={() => setOpen(true)} className="gap-2 bg-gradient-to-r from-primary to-primary/80 shadow-lg">
+                    <Plus className="h-4 w-4" />
+                    Nueva Transacción
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           ) : (
-            <Card>
-              <CardHeader>
-                <CardTitle>Historial de Transacciones</CardTitle>
-                <CardDescription>Todas tus transacciones bancarias</CardDescription>
+            <Card className="border-0 shadow-xl overflow-hidden bg-gradient-to-br from-card to-card/50">
+              <CardHeader className="border-b border-border/50">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-primary/10">
+                    <Receipt className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <CardTitle>Historial de Transacciones</CardTitle>
+                    <CardDescription>Todas tus transacciones bancarias</CardDescription>
+                  </div>
+                </div>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {transactions.map((tx) => {
+              <CardContent className="p-0">
+                <div className="divide-y divide-border/30">
+                  {transactions.map((tx, index) => {
                     const Icon = getTransactionIcon(tx.type);
                     const account = accounts.find(acc => acc.id === tx.accountId);
                     
                     return (
-                      <div key={tx.id} className="flex items-center justify-between p-4 bg-accent/30 rounded-lg hover:bg-accent/50 transition-colors">
+                      <div 
+                        key={tx.id} 
+                        className="flex items-center justify-between p-5 hover:bg-secondary/20 transition-all duration-300"
+                        style={{ animationDelay: `${index * 50}ms` }}
+                      >
                         <div className="flex items-center gap-4">
-                          <div className={`p-2 rounded-full ${tx.type === 'deposit' ? 'bg-success/20' : 'bg-primary/20'}`}>
-                            <Icon className={`h-5 w-5 ${tx.type === 'deposit' ? 'text-success' : 'text-primary'}`} />
+                          <div className={cn(
+                            "p-3 rounded-xl shadow-md",
+                            tx.type === 'deposit' 
+                              ? "bg-gradient-to-br from-success/20 to-success/5" 
+                              : tx.type === 'withdrawal'
+                                ? "bg-gradient-to-br from-destructive/20 to-destructive/5"
+                                : "bg-gradient-to-br from-primary/20 to-primary/5"
+                          )}>
+                            <Icon className={cn(
+                              "h-5 w-5",
+                              tx.type === 'deposit' ? "text-success" : tx.type === 'withdrawal' ? "text-destructive" : "text-primary"
+                            )} />
                           </div>
                           <div>
-                            <p className="font-semibold">{getTransactionLabel(tx.type)}</p>
+                            <p className="font-bold text-lg">{getTransactionLabel(tx.type)}</p>
                             <p className="text-sm text-muted-foreground">{tx.description}</p>
                             <p className="text-xs text-muted-foreground font-mono mt-1">
                               {account?.accountNumber}
@@ -296,11 +324,14 @@ const Transactions = () => {
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className={`text-lg font-bold ${tx.type === 'deposit' ? 'text-success' : 'text-destructive'}`}>
-                            {tx.type === 'deposit' ? '+' : '-'}S/{tx.amount.toLocaleString('es-PE', { minimumFractionDigits: 2 })}
+                          <p className={cn(
+                            "text-xl font-bold",
+                            tx.type === 'deposit' ? 'text-success' : 'text-destructive'
+                          )}>
+                            {tx.type === 'deposit' ? '+' : '-'}S/ {tx.amount.toLocaleString('es-PE', { minimumFractionDigits: 2 })}
                           </p>
-                          <p className="text-xs text-muted-foreground">
-                            {new Date(tx.date).toLocaleDateString('es-ES', { 
+                          <p className="text-sm text-muted-foreground">
+                            {new Date(tx.date).toLocaleDateString('es-PE', { 
                               day: '2-digit', 
                               month: 'short', 
                               year: 'numeric',
