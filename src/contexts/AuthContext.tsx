@@ -1,6 +1,9 @@
+// ============================================
+// CONTEXT - AuthContext (MVC Architecture)
+// ============================================
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { User } from '@/types';
-import DatabaseConnection from '@/services/DatabaseConnection';
+import { User } from '@/models/entities';
+import { DatabaseConnection } from '@/models/services';
 import { toast } from '@/hooks/use-toast';
 
 interface AuthContextType {
@@ -19,7 +22,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const db = DatabaseConnection.getInstance();
 
   useEffect(() => {
-    // Verificar si hay un usuario en localStorage
     const savedUser = localStorage.getItem('bancoplus-user');
     if (savedUser) {
       setUser(JSON.parse(savedUser));
@@ -33,7 +35,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const foundUser = users.find(u => u.email === email && u.password === password);
       
       if (foundUser) {
-        // No guardamos la contraseña en el estado ni en localStorage
         const { password: _, ...userWithoutPassword } = foundUser;
         setUser(userWithoutPassword as User);
         localStorage.setItem('bancoplus-user', JSON.stringify(userWithoutPassword));
